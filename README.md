@@ -1,3 +1,9 @@
+# WIP Repo
+Currently the only goal is to make this viable to run through WINE on Linux.
+What works: The program opens, you can add packages, download them, and copy whole files.
+What doesn't work: bin merging, contigent on making its dependencies WINE compatible.
+I will make it work. But probably only for Persona 3 FES, you're on your own if you want anything else out of me.
+
 # Aemulus Package Manager
 ## Introduction
 The wait is finally over!  No longer will you have to manually merge conflicting bin, bmd, pm1, bf and tbl files found in different mods.  This is the latest and greatest mod package manager, made specifically for Persona 4 Golden on PC, Persona 3 FES, Persona 5, and Persona 5 Strikers.
