@@ -1,8 +1,8 @@
 # WIP Repo
-Currently the only goal is to make this viable to run through WINE on Linux.
-What works: The program opens, you can add packages, download them, and copy whole files.
-What doesn't work: bin merging, contigent on making its dependencies WINE compatible.
-I will make it work. But probably only for Persona 3 FES, you're on your own if you want anything else out of me.
+Currently the only goal is to make this viable to run through WINE on Linux.  
+What works: The program opens, you can add packages, download them, and copy whole files.  
+What doesn't work: bin merging, contigent on making its dependencies WINE compatible.  
+I will make it work. But probably only for Persona 3 FES, you're on your own if you want anything else out of me.  
 
 # Aemulus Package Manager
 ## Introduction
