@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -19,8 +20,6 @@ namespace AemulusModManager
     /// </summary>
     public partial class App : Application
     {
-
-
 
         [DllImport("User32.dll")]
         private static extern bool IsIconic(IntPtr hWnd);
@@ -78,7 +77,7 @@ namespace AemulusModManager
         protected override void OnStartup(StartupEventArgs e)
         {
             ShutdownMode = ShutdownMode.OnMainWindowClose;
-
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             InstallGBHandler();
             var otherProcess = AlreadyRunning();
@@ -116,6 +115,6 @@ namespace AemulusModManager
                 Mouse.OverrideCursor = null;
             });
         }
-
     }
+
 }

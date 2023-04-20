@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Windows.Shapes;
 using AemulusModManager.Utilities;
 using AemulusModManager.Utilities.FileMerging;
 using Pri.LongPath;
@@ -19,7 +20,8 @@ namespace AemulusModManager
     public static class binMerge
     {
         private static string exePath = $@"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}\Dependencies\PAKPack\PAKPack.exe";
-
+        private static string[] looseExtensions = {".bin", ".abin", ".fpc", ".gsd", ".tpc", 
+                                                  ".arc",".pac", ".pak", ".pack", ".spd" };
         // Use PAKPack command
         public static void PAKPackCMD(string args)
         {
@@ -463,6 +465,52 @@ namespace AemulusModManager
             }
             Utilities.ParallelLogger.Log("[INFO] Finished unpacking!");
         }
+        public static bool FileExistsCaseSensitive(string filename)
+        {
+            string name = Path.GetDirectoryName(filename);
+            return name != null
+                   && Array.Exists(Directory.GetFiles(name), s => s == Path.GetFullPath(filename));
+        }
+        private static void ProcessLoose(string ogPath, string d)
+        {
+            if (!Directory.Exists(Path.GetDirectoryName(d)))
+                Directory.CreateDirectory(Path.GetDirectoryName(d));
+            if (Path.GetFileName(ogPath) == "panel.bin")
+            {
+                if (!Directory.Exists($@"{d}\panel"))
+                    return;
+            }
+            if (Path.GetFileName(ogPath) == "result.pac")
+            {
+                if (!Directory.Exists($@"{d}\result"))
+                    return;
+                if (!Directory.GetFiles($@"{d}\result", "*.GFS", SearchOption.TopDirectoryOnly).Any()
+                    && !Directory.GetFiles($@"{d}\result", "*.GMD", SearchOption.TopDirectoryOnly).Any())
+                    return;
+            }
+            if (Path.GetFileName(ogPath) == "crossword.pak")
+            {
+                if (!Directory.GetFiles(d, "*.dds", SearchOption.AllDirectories).Any()
+                    && !Directory.GetFiles(d, "*.spdspr", SearchOption.AllDirectories).Any()
+                    && !Directory.GetFiles(d, "*.bmd", SearchOption.AllDirectories).Any()
+                    && !Directory.GetFiles(d, "*.plg", SearchOption.AllDirectories).Any())
+                    return;
+            }
+            if (Path.GetFileName(ogPath) == "result.spd")
+            {
+                if (!Directory.GetFiles(d, "*.dds", SearchOption.TopDirectoryOnly).Any()
+                    && !Directory.GetFiles(d, "*.spdspr", SearchOption.TopDirectoryOnly).Any())
+                    return;
+            }
+            if (Path.GetFileName(ogPath) == "crossword.spd")
+            {
+                if (!Directory.GetFiles(d, "*.dds", SearchOption.TopDirectoryOnly).Any()
+                    && !Directory.GetFiles(d, "*.spdspr", SearchOption.TopDirectoryOnly).Any())
+                    return;
+            }
+            Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
+            FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
+        }
 
         public static void Merge(string modDir, string game)
         {
@@ -474,117 +522,19 @@ namespace AemulusModManager
                 int idx = folders.IndexOf(Path.GetFileName(modDir)) + 1;
                 folders = folders.Skip(idx).ToList();
                 string ogPath = $@"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}\Original\{game}\{string.Join("\\", folders.ToArray())}";
-
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".bin")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".bin")))
+                for( int i = 0; i < looseExtensions.Length; i++)
                 {
-                    ogPath = Path.ChangeExtension(ogPath, ".bin");
-                    if (Path.GetFileName(ogPath) == "panel.bin")
+                    string extension = looseExtensions[i];
+                    string extensionUpper = looseExtensions[i].ToUpper();
+                    if (FileExistsCaseSensitive(ogPath + extension) && !FileExistsCaseSensitive(d + extension))
                     {
-                        if (!Directory.Exists($@"{d}\panel"))
-                            continue;
+                        ProcessLoose(ogPath + extension, d);
                     }
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    if (!Directory.Exists(Path.GetDirectoryName(d)))
-                        Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".abin")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".abin")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".abin");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".fpc")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".fpc")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".fpc");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".gsd")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".gsd")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".gsd");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".tpc")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".tpc")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".tpc");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".arc")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".arc")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".arc");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".pac")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".pac")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".pac");
-                    if (Path.GetFileName(ogPath) == "result.pac")
+                    
+                    if (FileExistsCaseSensitive(ogPath + extensionUpper) && !FileExistsCaseSensitive(d + extensionUpper))
                     {
-                        if (!Directory.Exists($@"{d}\result"))
-                            continue;
-                        if (!Directory.GetFiles($@"{d}\result", "*.GFS", SearchOption.TopDirectoryOnly).Any()
-                            && !Directory.GetFiles($@"{d}\result", "*.GMD", SearchOption.TopDirectoryOnly).Any())
-                            continue;
+                        ProcessLoose(ogPath + extensionUpper, d);
                     }
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".pak")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".pak")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".pak");
-                    if (Path.GetFileName(ogPath) == "crossword.pak")
-                    {
-                        if (!Directory.GetFiles(d, "*.dds", SearchOption.AllDirectories).Any()
-                            && !Directory.GetFiles(d, "*.spdspr", SearchOption.AllDirectories).Any()
-                            && !Directory.GetFiles(d, "*.bmd", SearchOption.AllDirectories).Any()
-                            && !Directory.GetFiles(d, "*.plg", SearchOption.AllDirectories).Any())
-                            continue;
-                    }
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".pack")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".pack")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".pack");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (game != "Persona Q2" && FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".spr")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".spr")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".spr");
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
-                }
-                if (FileIOWrapper.Exists(Path.ChangeExtension(ogPath, ".spd")) && !FileIOWrapper.Exists(Path.ChangeExtension(d, ".spd")))
-                {
-                    ogPath = Path.ChangeExtension(ogPath, ".spd");
-                    if (Path.GetFileName(ogPath) == "result.spd")
-                    {
-                        if (!Directory.GetFiles(d, "*.dds", SearchOption.TopDirectoryOnly).Any()
-                            && !Directory.GetFiles(d, "*.spdspr", SearchOption.TopDirectoryOnly).Any())
-                            continue;
-                    }
-                    if (Path.GetFileName(ogPath) == "crossword.spd")
-                    {
-                        if (!Directory.GetFiles(d, "*.dds", SearchOption.TopDirectoryOnly).Any()
-                            && !Directory.GetFiles(d, "*.spdspr", SearchOption.TopDirectoryOnly).Any())
-                            continue;
-                    }
-                    Utilities.ParallelLogger.Log($"[INFO] Copying over {ogPath} to use as base.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(d));
-                    FileIOWrapper.Copy(ogPath, $@"{Path.GetDirectoryName(d)}\{Path.GetFileName(ogPath)}");
                 }
             }
 
